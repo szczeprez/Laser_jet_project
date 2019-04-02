@@ -22,7 +22,8 @@ unsigned long aktualnyCzasSENSOR = 0;
 unsigned long zapamietanyCzasSENSOR_Red = 0;
 unsigned long zapamietanyCzasSENSOR_Green = 0;
 unsigned long zapamietanyCzasSENSOR_Blue = 0;
-long listOfResults[5] = {0};
+double listOfResults[3] = {0.0};
+int index = 0;
 
 void setup() {
   pinMode(S0, OUTPUT);
@@ -37,7 +38,6 @@ void setup() {
 
   digitalWrite(S0, HIGH);
   digitalWrite(S1, LOW);
-  digitalWrite(laser, HIGH);
 
   Serial.begin(57600);
   //get average of 5 sec callibarion
@@ -78,42 +78,28 @@ void loop() {
 }
 
 void breakLaser() {
-  int i;
   switch (state) {
     case 0:
 
-      //button_start_time_state - startuj kolejny czas
-      //button_select_time_state - przechodz po liscie czasów ktore aktualnie zostaly policzone
-
-      Serial.println("Press the Button to Start! or display List");
+      Serial.println("Press the Button to Start or display the results.");
 
       if (digitalRead(button_time) == LOW) {
-        Serial.println("Pressed Button time 11111111 <<<<<<<<<");
-        //numberOfBreaks;
-        i = 0;
         state = 1;
-
-        // Display list of results
-      } else if (digitalRead(button_select_time) == LOW && sizeof(listOfResults) != 0) {
-        Serial.println("Pressed Button select time 222222 <<<<<<<<<");
-
+      } else if (digitalRead( button_select_time) == LOW ) {
         state = 4;
-
       }
       break;
 
     case 1:
-      Serial.println(".");
       if (countLaserBreak(START)) {
         Serial.println("Started! ");
         startCzas();
-        i++;
         state = 2;
       }
       break;
 
     case 2:
-      odmierzamCzas(); 
+      countingTime();
       if (countLaserBreak(2)) {
         state = 3;
       }
@@ -121,17 +107,17 @@ void breakLaser() {
 
     case 3:
       Serial.println("Finished! ");
-      // double val = finishTime() / 1000;
-      listOfResults[i] = finishTime();
-
+      listOfResults[index++] = finishTime() / 1000;
       state = 0;
-
       break;
 
     case 4:
       Serial.println("Results: ");
-      for (int z = 0; z < sizeof(listOfResults); z++) {
-        Serial.println(listOfResults[z]);
+      for (int z = 0; z < index; z++) {
+        Serial.print(z);
+        Serial.print(". "); 
+        Serial.print(listOfResults[z]);
+        Serial.println(" s."); 
       }
       state = 0;
       break;
@@ -145,32 +131,35 @@ void breakLaser() {
 boolean countLaserBreak(uint8_t number) {
   if (red > 150 || green > 150 || blue > 150) {
     counterBreak++;
-    Serial.print("Linia przekroczona: ");
-    Serial.print(counterBreak);
-    Serial.println(" razy.");
   }
+
   if (counterBreak > number ) {
     counterBreak = 0;
     return true;
   }
   return false;
 }
+
 void startCzas() {
+  digitalWrite(laser, HIGH);
   startCounterTime = millis();
-  zapamietanyCzas = 0, roznicaCzasu = 0; 
+  zapamietanyCzas = 0, roznicaCzasu = 0;
 }
-void odmierzamCzas() {
+
+void countingTime() {
   long actualTime = millis();
+  
   roznicaCzasu = actualTime - zapamietanyCzas;
 
   if (roznicaCzasu >= 1000UL) {
     zapamietanyCzas = actualTime;
-    Serial.print(actualTime / 1000);
+    Serial.print((millis() - startCounterTime) / 1000);
     Serial.println(" s.");
   }
 }
 
 double finishTime() {
   finishCounterTime = millis() - startCounterTime;
+  digitalWrite(laser, LOW);
   return finishCounterTime;
 }
