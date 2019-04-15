@@ -3,9 +3,11 @@
 #define S2 6
 #define S3 7
 #define sensorOut 8
-#define laser 10
-#define button_time 9
-#define button_select_time 11
+#define laser 12
+#define button_time 2
+#define button_select_time 3
+#include <SoftwareSerial.h>
+SoftwareSerial bluetoothSerial(10, 11); // RX, TX // DO USTAWIENIA PINY DLA BLUETOOTH
 
 int START = 0;
 int red = 0;
@@ -26,6 +28,14 @@ double listOfResults[3] = {0.0};
 int index = 0;
 
 void setup() {
+  Serial.begin(9600);
+  while (!Serial) {
+    ; // wait for serial port to connect. Needed for native USB port only
+  }
+
+  bluetoothSerial.begin(9600);
+  bluetoothSerial.println("Witam w aplikacji fotokomórki. Będziesz miał możliwość mieżenia czasu i listowania członków wyścigu. Udanej zabawy! :)");
+
   pinMode(S0, OUTPUT);
   pinMode(S1, OUTPUT);
   pinMode(S2, OUTPUT);
@@ -39,7 +49,6 @@ void setup() {
   digitalWrite(S0, HIGH);
   digitalWrite(S1, LOW);
 
-  Serial.begin(57600);
   //get average of 5 sec callibarion
   // and then start clock
 
@@ -81,11 +90,12 @@ void breakLaser() {
   switch (state) {
     case 0:
 
-      Serial.println("Press the Button to Start or display the results.");
+     // blueToothWrite("Choose S to Start or L to display the results.");
+      bluetoothSerial.println("Choose S to Start or L to display the results.");
 
-      if (digitalRead(button_time) == LOW) {
+      if (blueToothRead() == "S" || digitalRead(button_time) == LOW) {
         state = 1;
-      } else if (digitalRead( button_select_time) == LOW ) {
+      } else if (blueToothRead() == "L" || digitalRead( button_select_time) == LOW ) {
         state = 4;
       }
       break;
@@ -93,6 +103,7 @@ void breakLaser() {
     case 1:
       if (countLaserBreak(START)) {
         Serial.println("Started! ");
+      //  blueToothWrite("Started! ");
         startCzas();
         state = 2;
       }
@@ -107,6 +118,8 @@ void breakLaser() {
 
     case 3:
       Serial.println("Finished! ");
+    //  blueToothWrite("Finished! ");
+
       listOfResults[index++] = finishTime() / 1000;
       state = 0;
       break;
@@ -115,15 +128,22 @@ void breakLaser() {
       Serial.println("Results: ");
       for (int z = 0; z < index; z++) {
         Serial.print(z);
-        Serial.print(". "); 
+        Serial.print(". ");
         Serial.print(listOfResults[z]);
-        Serial.println(" s."); 
+        Serial.println(" s.");
+
+        //  blueToothWrite(z);
+        //  blueToothWrite(". ");
+        //blueToothWrite((String)listOfResults[z]);
+        //blueToothWrite(" s.");
+
       }
       state = 0;
       break;
 
     default:
       Serial.println("DEFAULT");
+   //   blueToothWrite("DEFAULT");
       Serial.end();
   }
 }
@@ -148,13 +168,16 @@ void startCzas() {
 
 void countingTime() {
   long actualTime = millis();
-  
+
   roznicaCzasu = actualTime - zapamietanyCzas;
 
   if (roznicaCzasu >= 1000UL) {
     zapamietanyCzas = actualTime;
     Serial.print((millis() - startCounterTime) / 1000);
     Serial.println(" s.");
+
+   // blueToothWrite((millis() - startCounterTime) / 1000);
+   // blueToothWrite(" s.");
   }
 }
 
@@ -162,4 +185,33 @@ double finishTime() {
   finishCounterTime = millis() - startCounterTime;
   digitalWrite(laser, LOW);
   return finishCounterTime;
+}
+
+String blueToothRead() {
+  String content = "";
+  char character;
+
+  while (bluetoothSerial.available()) {
+    character = bluetoothSerial.read();
+    content.concat(character);
+  }
+
+  if (content != "") {
+    Serial.print(content);
+  }
+  return content;
+}
+
+void blueToothWrite() {
+
+//  if (writeContent == "") {
+//    Serial.print("The Bluetooth writeContent is empty");
+//  }
+
+
+  //bluetoothSerial.write(tab2);
+
+    if (Serial.available()) {
+    bluetoothSerial.write(Serial.read());
+  } 
 }
