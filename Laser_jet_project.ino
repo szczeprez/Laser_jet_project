@@ -24,8 +24,9 @@ unsigned long aktualnyCzasSENSOR = 0;
 unsigned long zapamietanyCzasSENSOR_Red = 0;
 unsigned long zapamietanyCzasSENSOR_Green = 0;
 unsigned long zapamietanyCzasSENSOR_Blue = 0;
-double listOfResults[3] = {0.0};
+double listOfResults[51] = {0.0};
 int index = 0;
+boolean menuFlag = true;
 
 void setup() {
   Serial.begin(9600);
@@ -90,20 +91,17 @@ void breakLaser() {
   switch (state) {
     case 0:
 
-     // blueToothWrite("Choose S to Start or L to display the results.");
-      bluetoothSerial.println("Choose S to Start or L to display the results.");
-
-      if (blueToothRead() == "S" || digitalRead(button_time) == LOW) {
-        state = 1;
-      } else if (blueToothRead() == "L" || digitalRead( button_select_time) == LOW ) {
-        state = 4;
+      if (menuFlag) {
+        bluetoothSerial.println("Wybierz S na Start lub L by wyświetlić listę wyników.");
+        menuFlag = false;
       }
+      blueToothRead();
+
       break;
 
     case 1:
       if (countLaserBreak(START)) {
-        Serial.println("Started! ");
-      //  blueToothWrite("Started! ");
+        blueToothWrite("Start! ");
         startCzas();
         state = 2;
       }
@@ -117,33 +115,40 @@ void breakLaser() {
       break;
 
     case 3:
-      Serial.println("Finished! ");
-    //  blueToothWrite("Finished! ");
+      blueToothWrite("Koniec! ");
 
-      listOfResults[index++] = finishTime() / 1000;
+      if (index < 51) {
+        listOfResults[index++] = finishTime() / 1000;
+      } else {
+        blueToothWrite("Nie można dodać więcej wyników.");
+      }
       state = 0;
       break;
 
     case 4:
-      Serial.println("Results: ");
+      blueToothWrite("Wyniki: ");
+      if (index == 0) {
+        blueToothWrite("Lista jest pusta.");
+      }
+      Serial.print("index: ");
+      Serial.println(index);
       for (int z = 0; z < index; z++) {
         Serial.print(z);
         Serial.print(". ");
         Serial.print(listOfResults[z]);
         Serial.println(" s.");
 
-        //  blueToothWrite(z);
-        //  blueToothWrite(". ");
-        //blueToothWrite((String)listOfResults[z]);
-        //blueToothWrite(" s.");
+        bluetoothSerial.print(z);
+        bluetoothSerial.print(". ");
+        bluetoothSerial.print(listOfResults[z]);
+        bluetoothSerial.println(" s.");
 
       }
       state = 0;
       break;
 
     default:
-      Serial.println("DEFAULT");
-   //   blueToothWrite("DEFAULT");
+      blueToothWrite("DEFAULT");
       Serial.end();
   }
 }
@@ -173,11 +178,9 @@ void countingTime() {
 
   if (roznicaCzasu >= 1000UL) {
     zapamietanyCzas = actualTime;
-    Serial.print((millis() - startCounterTime) / 1000);
-    Serial.println(" s.");
-
-   // blueToothWrite((millis() - startCounterTime) / 1000);
-   // blueToothWrite(" s.");
+    int resultTime = ((millis() - startCounterTime) / 1000);
+    bluetoothSerial.print(resultTime);
+    bluetoothSerial.print(" s.");
   }
 }
 
@@ -197,21 +200,20 @@ String blueToothRead() {
   }
 
   if (content != "") {
-    Serial.print(content);
+    content.trim();
+    if (content.equals("S")) {
+      state = 1;
+    } else if (content.equals("L")) {
+      state = 4;
+    }
+    blueToothWrite(content);
   }
+
   return content;
 }
 
-void blueToothWrite() {
+void blueToothWrite(String writeContent) {
 
-//  if (writeContent == "") {
-//    Serial.print("The Bluetooth writeContent is empty");
-//  }
-
-
-  //bluetoothSerial.write(tab2);
-
-    if (Serial.available()) {
-    bluetoothSerial.write(Serial.read());
-  } 
+  Serial.println(writeContent);
+  bluetoothSerial.println(writeContent);
 }
