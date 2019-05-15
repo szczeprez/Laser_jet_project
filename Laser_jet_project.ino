@@ -1,11 +1,9 @@
-#define S0 4
-#define S1 5
-#define S2 6
-#define S3 7
-#define sensorOut 8
+#define S0 2
+#define S1 3
+#define S2 4
+#define S3 5
+#define sensorOut 6
 #define laser 12
-#define button_time 2
-#define button_select_time 3
 #include <SoftwareSerial.h>
 SoftwareSerial bluetoothSerial(10, 11); // RX, TX // DO USTAWIENIA PINY DLA BLUETOOTH
 
@@ -29,6 +27,7 @@ int index = 0;
 boolean menuFlag = true;
 
 void setup() {
+
   Serial.begin(9600);
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
@@ -42,8 +41,6 @@ void setup() {
   pinMode(S2, OUTPUT);
   pinMode(S3, OUTPUT);
   pinMode(sensorOut, INPUT);
-  pinMode(button_time, INPUT_PULLUP);
-  pinMode(button_select_time, INPUT_PULLUP);
 
   pinMode(laser, OUTPUT);
 
@@ -62,8 +59,7 @@ void loop() {
     digitalWrite(S2, LOW);
     digitalWrite(S3, LOW);
     red = pulseIn(sensorOut, LOW);
-    //  Serial.println("Red");
-
+     // Serial.print("Red: ");
   }
   delay(100);
 
@@ -72,7 +68,7 @@ void loop() {
     digitalWrite(S2, HIGH);
     digitalWrite(S3, HIGH);
     green = pulseIn(sensorOut, LOW);
-    //Serial.println("Green");
+  //  Serial.print("Green ");
   }
   delay(100);
 
@@ -81,13 +77,14 @@ void loop() {
     digitalWrite(S2, LOW);
     digitalWrite(S3, HIGH);
     blue = pulseIn(sensorOut, LOW);
-    //   Serial.println("Blue");
+       //Serial.print("Blue ");
   }
   delay(100);
   breakLaser();
 }
 
 void breakLaser() {
+  
   switch (state) {
     case 0:
 
@@ -96,7 +93,6 @@ void breakLaser() {
         menuFlag = false;
       }
       blueToothRead();
-
       break;
 
     case 1:
