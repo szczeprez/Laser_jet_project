@@ -59,7 +59,8 @@ void loop() {
     digitalWrite(S2, LOW);
     digitalWrite(S3, LOW);
     red = pulseIn(sensorOut, LOW);
-     // Serial.print("Red: ");
+      Serial.print("Red: ");
+      Serial.println(red);
   }
   delay(100);
 
@@ -68,7 +69,8 @@ void loop() {
     digitalWrite(S2, HIGH);
     digitalWrite(S3, HIGH);
     green = pulseIn(sensorOut, LOW);
-  //  Serial.print("Green ");
+    Serial.print("Green ");
+    Serial.println(green);
   }
   delay(100);
 
@@ -77,7 +79,8 @@ void loop() {
     digitalWrite(S2, LOW);
     digitalWrite(S3, HIGH);
     blue = pulseIn(sensorOut, LOW);
-       //Serial.print("Blue ");
+       Serial.print("Blue ");
+       Serial.println(blue);
   }
   delay(100);
   breakLaser();
@@ -142,7 +145,14 @@ void breakLaser() {
       }
       state = 0;
       break;
-
+   case 5:
+     //kalibracja
+     digitalWrite(laser, HIGH);
+     blueToothWrite("Kalibracja lasera 5s.");
+     delay(5000); 
+     digitalWrite(laser, LOW);
+     state = 0; 
+     break; 
     default:
       blueToothWrite("DEFAULT");
       Serial.end();
@@ -201,6 +211,8 @@ String blueToothRead() {
       state = 1;
     } else if (content.equals("L")) {
       state = 4;
+    } else if (content.equals("K")) {
+      state = 5;
     }
     blueToothWrite(content);
   }
