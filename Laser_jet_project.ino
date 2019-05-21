@@ -4,10 +4,12 @@
 #define S3 5
 #define sensorOut 6
 #define laser 12
+#define rxPin 10
+#define txPin 11
 #include <SoftwareSerial.h>
-SoftwareSerial bluetoothSerial(10, 11); // RX, TX // DO USTAWIENIA PINY DLA BLUETOOTH
+SoftwareSerial bluetoothSerial(rxPin, txPin); // RX, TX // DO USTAWIENIA PINY DLA BLUETOOTH
 
-int START = 0;
+uint8_t START = 0;
 int red = 0;
 int green = 0;
 int blue = 0;
@@ -32,9 +34,9 @@ void setup() {
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
-
+  pinMode(rxPin, INPUT);
+  pinMode(txPin, OUTPUT);
   bluetoothSerial.begin(9600);
-  bluetoothSerial.println("Witam w aplikacji fotokomórki. Będziesz miał możliwość mieżenia czasu i listowania członków wyścigu. Udanej zabawy! :)");
 
   pinMode(S0, OUTPUT);
   pinMode(S1, OUTPUT);
@@ -49,9 +51,11 @@ void setup() {
 
   //get average of 5 sec callibarion
   // and then start clock
-
+  //  delay(3000);
+  //  Serial.println("aaaaaaaaaaaaaaaaaa");
 }
 void loop() {
+  // bluetoothSerial.print("AT\r\n");
 
   aktualnyCzasSENSOR = millis();
   if (aktualnyCzasSENSOR - zapamietanyCzasSENSOR_Red >= 300UL) {
@@ -59,8 +63,8 @@ void loop() {
     digitalWrite(S2, LOW);
     digitalWrite(S3, LOW);
     red = pulseIn(sensorOut, LOW);
-      Serial.print("Red: ");
-      Serial.println(red);
+    // Serial.print("Red: ");
+    // Serial.println(red);
   }
   delay(100);
 
@@ -69,8 +73,8 @@ void loop() {
     digitalWrite(S2, HIGH);
     digitalWrite(S3, HIGH);
     green = pulseIn(sensorOut, LOW);
-    Serial.print("Green ");
-    Serial.println(green);
+    // Serial.print("Green ");
+    // Serial.println(green);
   }
   delay(100);
 
@@ -79,18 +83,17 @@ void loop() {
     digitalWrite(S2, LOW);
     digitalWrite(S3, HIGH);
     blue = pulseIn(sensorOut, LOW);
-       Serial.print("Blue ");
-       Serial.println(blue);
+    //   Serial.print("Blue ");
+    //   Serial.println(blue);
   }
   delay(100);
   breakLaser();
 }
 
 void breakLaser() {
-  
+
   switch (state) {
     case 0:
-
       if (menuFlag) {
         bluetoothSerial.println("Wybierz S na Start lub L by wyświetlić listę wyników.");
         menuFlag = false;
@@ -129,8 +132,7 @@ void breakLaser() {
       if (index == 0) {
         blueToothWrite("Lista jest pusta.");
       }
-      Serial.print("index: ");
-      Serial.println(index);
+
       for (int z = 0; z < index; z++) {
         Serial.print(z);
         Serial.print(". ");
@@ -145,14 +147,16 @@ void breakLaser() {
       }
       state = 0;
       break;
-   case 5:
-     //kalibracja
-     digitalWrite(laser, HIGH);
-     blueToothWrite("Kalibracja lasera 5s.");
-     delay(5000); 
-     digitalWrite(laser, LOW);
-     state = 0; 
-     break; 
+    case 5:
+
+      digitalWrite(laser, HIGH);
+      blueToothWrite("Kalibracja lasera 5s.");
+      delay(5000);
+      digitalWrite(laser, LOW);
+      menuFlag = true;
+      state = 0;
+      blueToothWrite("Kalibracja zakończona.");
+      break;
     default:
       blueToothWrite("DEFAULT");
       Serial.end();
@@ -160,6 +164,7 @@ void breakLaser() {
 }
 
 boolean countLaserBreak(uint8_t number) {
+
   if (red > 150 || green > 150 || blue > 150) {
     counterBreak++;
   }
@@ -211,7 +216,7 @@ String blueToothRead() {
       state = 1;
     } else if (content.equals("L")) {
       state = 4;
-    } else if (content.equals("K")) {
+    }   else if (content.equals("K")) {
       state = 5;
     }
     blueToothWrite(content);
